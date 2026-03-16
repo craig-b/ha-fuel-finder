@@ -165,6 +165,7 @@ class CheapestFuelSensor(CoordinatorEntity[FuelFinderCoordinator], SensorEntity)
                     results.append(
                         {
                             "name": station.trading_name,
+                            "brand": station.brand_name,
                             "price": price.price,
                             "address": address,
                         }
@@ -181,15 +182,25 @@ class CheapestFuelSensor(CoordinatorEntity[FuelFinderCoordinator], SensorEntity)
         return None
 
     @property
+    def attribution(self) -> str | None:
+        """Show the cheapest station name as attribution."""
+        sorted_prices = self._get_sorted_prices()
+        if sorted_prices:
+            return sorted_prices[0]["name"]
+        return None
+
+    @property
     def extra_state_attributes(self) -> dict | None:
         """Return extra state attributes."""
         sorted_prices = self._get_sorted_prices()
         if not sorted_prices:
             return None
 
+        cheapest = sorted_prices[0]
         attrs: dict = {
-            "station_name": sorted_prices[0]["name"],
-            "station_address": sorted_prices[0]["address"],
+            "station_name": cheapest["name"],
+            "station_brand": cheapest.get("brand", ""),
+            "station_address": cheapest["address"],
         }
         if len(sorted_prices) > 1:
             attrs["runner_up_price"] = sorted_prices[1]["price"]
