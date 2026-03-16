@@ -62,7 +62,8 @@ The config flow will:
 
 1. Ask for your OAuth2 client ID and client secret
 2. Let you search for stations by postcode or name
-3. Select which stations to track
+3. Select which stations to track (searchable dropdown)
+4. Choose which fuel types to monitor (e.g. just unleaded and diesel)
 
 You can add more stations later by reconfiguring the integration.
 
@@ -81,6 +82,93 @@ Add this repository as a custom repository in HACS, then install "Fuel Finder".
 
 Copy `custom_components/fuel_finder/` to your Home Assistant `config/custom_components/` directory and restart.
 
+## Dashboard ideas
+
+### Map with prices on pins
+
+Station sensors include `latitude` and `longitude` attributes, so they work with the Map card. Use `label_mode: state` to show the price directly on each pin instead of initials:
+
+```yaml
+type: map
+entities:
+  - entity: sensor.my_local_tesco_unleaded_e10_price
+    label_mode: state
+  - entity: sensor.shell_high_street_unleaded_e10_price
+    label_mode: state
+  - entity: sensor.bp_main_road_unleaded_e10_price
+    label_mode: state
+```
+
+### Cheapest fuel glance card
+
+A quick overview of the best prices across all your tracked stations:
+
+```yaml
+type: entities
+title: Cheapest fuel
+entities:
+  - entity: sensor.fuel_finder_cheapest_e10
+    name: Unleaded
+  - entity: sensor.fuel_finder_cheapest_b7_standard
+    name: Diesel
+```
+
+The attribution line beneath each row shows which station has the cheapest price.
+
+### Price history graph
+
+Track how prices change over time at a specific station or across the cheapest sensors:
+
+```yaml
+type: history-graph
+title: Diesel price history
+hours_to_show: 168
+entities:
+  - entity: sensor.fuel_finder_cheapest_b7_standard
+    name: Cheapest diesel
+  - entity: sensor.my_local_tesco_diesel_b7_price
+    name: Local Tesco
+  - entity: sensor.shell_high_street_diesel_b7_price
+    name: Shell High Street
+```
+
+### Conditional card for price alerts
+
+Highlight a station only when its price drops below a threshold:
+
+```yaml
+type: conditional
+conditions:
+  - entity: sensor.my_local_tesco_unleaded_e10_price
+    state_not: unavailable
+  - entity: sensor.my_local_tesco_unleaded_e10_price
+    below: "135"
+card:
+  type: tile
+  entity: sensor.my_local_tesco_unleaded_e10_price
+  name: Cheap unleaded nearby
+  color: green
+```
+
+### Markdown card with top 3
+
+Use the `cheapest_3` attribute to build a custom leaderboard:
+
+```yaml
+type: markdown
+title: Cheapest Unleaded
+content: >
+  {% set top3 = state_attr('sensor.fuel_finder_cheapest_e10', 'cheapest_3') %}
+  {% if top3 %}
+  {% for s in top3 %}
+  {{ loop.index }}. **{{ s.name }}** — {{ s.price }}p
+     _{{ s.address }}_
+  {% endfor %}
+  {% else %}
+  No data available
+  {% endif %}
+```
+
 ## Example automations
 
 **Notify when diesel drops below a threshold:**
@@ -89,7 +177,7 @@ Copy `custom_components/fuel_finder/` to your Home Assistant `config/custom_comp
 automation:
   - trigger:
       - platform: numeric_state
-        entity_id: sensor.my_local_shell_b7_price
+        entity_id: sensor.my_local_tesco_diesel_b7_price
         below: 135
     action:
       - action: notify.mobile_app
