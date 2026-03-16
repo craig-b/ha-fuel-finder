@@ -2,46 +2,60 @@
   "config": {
     "step": {
       "user": {
-        "title": "Fuel Finder Credentials",
-        "description": "Enter your Fuel Finder API credentials.",
+        "title": "Connect to Fuel Finder",
+        "description": "Enter the credentials from your Fuel Finder developer account.",
         "data": {
           "client_id": "Client ID",
-          "client_secret": "Client Secret"
+          "client_secret": "Client secret"
+        },
+        "data_description": {
+          "client_id": "Found in your Fuel Finder developer portal under API credentials.",
+          "client_secret": "The secret associated with your client ID."
         }
       },
       "search": {
-        "title": "Search for Stations",
-        "description": "Enter a postcode, station name, or city to search for stations.",
+        "title": "Find fuel stations",
+        "description": "Search by postcode, city, or station name to find stations to monitor.",
         "data": {
-          "search_query": "Search"
+          "search_query": "Search location"
+        },
+        "data_description": {
+          "search_query": "For example: SW1A 1AA, London, or Shell."
         }
       },
       "select_stations": {
-        "title": "Select Stations",
-        "description": "Select the stations you want to track.",
+        "title": "Select stations",
+        "description": "Choose which stations you want to track fuel prices for.",
         "data": {
           "stations": "Stations",
           "search_again": "Search for more stations"
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate Fuel Finder",
-        "description": "Your credentials have expired. Please enter new credentials.",
+        "title": "Re-authenticate",
+        "description": "Your credentials are no longer valid. Please enter new credentials.",
         "data": {
           "client_id": "Client ID",
-          "client_secret": "Client Secret"
+          "client_secret": "Client secret"
+        },
+        "data_description": {
+          "client_id": "Found in your Fuel Finder developer portal under API credentials.",
+          "client_secret": "The secret associated with your client ID."
         }
       },
       "reconfigure_search": {
-        "title": "Search for Stations",
-        "description": "Enter a postcode, station name, or city to search for stations.",
+        "title": "Find fuel stations",
+        "description": "Search by postcode, city, or station name to find stations to add.",
         "data": {
-          "search_query": "Search"
+          "search_query": "Search location"
+        },
+        "data_description": {
+          "search_query": "For example: SW1A 1AA, London, or Shell."
         }
       },
       "reconfigure_select": {
-        "title": "Select Stations",
-        "description": "Select the stations you want to track.",
+        "title": "Select stations",
+        "description": "Choose which stations you want to track fuel prices for.",
         "data": {
           "stations": "Stations",
           "search_again": "Search for more stations"
@@ -59,7 +73,8 @@
     "abort": {
       "already_configured": "This account is already configured.",
       "reauth_successful": "Re-authentication was successful.",
-      "reconfigure_successful": "Reconfiguration was successful."
+      "reconfigure_successful": "Reconfiguration was successful.",
+      "cannot_connect": "Unable to connect to the Fuel Finder API. Please check your credentials and try again."
     }
   }
 }
