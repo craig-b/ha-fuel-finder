@@ -14,12 +14,12 @@ PRICES_URL = f"{BASE_URL}/api/v1/pfs/fuel-prices"
 UPDATE_INTERVAL = timedelta(minutes=30)
 
 FUEL_TYPES: dict[str, str] = {
-    "E5": "E5",
-    "E10": "E10",
-    "B7_STANDARD": "B7",
-    "B7_PREMIUM": "B7 Premium",
-    "B10": "B10",
-    "HVO": "HVO",
+    "E5": "Super Unleaded (E5)",
+    "E10": "Unleaded (E10)",
+    "B7_STANDARD": "Diesel (B7)",
+    "B7_PREMIUM": "Premium Diesel",
+    "B10": "Diesel (B10)",
+    "HVO": "HVO Diesel",
 }
 
 CONF_CLIENT_ID = "client_id"
