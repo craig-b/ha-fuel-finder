@@ -42,8 +42,7 @@ class FuelFinderAPI:
         try:
             resp = await self._session.post(
                 TOKEN_URL,
-                data={
-                    "grant_type": "client_credentials",
+                json={
                     "client_id": self._client_id,
                     "client_secret": self._client_secret,
                 },
@@ -53,7 +52,7 @@ class FuelFinderAPI:
                 f"Failed to connect to token endpoint: {err}"
             ) from err
 
-        if resp.status in (400, 403):
+        if resp.status in (400, 401, 403):
             raise FuelFinderAuthError("Invalid client credentials")
         if resp.status == 429:
             raise FuelFinderRateLimitError("Rate limited during authentication")
@@ -63,8 +62,17 @@ class FuelFinderAPI:
             raise FuelFinderConnectionError(f"Unexpected status during auth: {resp.status}")
 
         data = await resp.json()
-        self._access_token = data["access_token"]
-        expires_in = int(data.get("expires_in", 3600))
+
+        # The API wraps responses in {"success": ..., "data": {...}}
+        token_data = data.get("data", data)
+        if "access_token" not in token_data:
+            LOGGER.debug("Token response keys: %s", list(data.keys()))
+            raise FuelFinderAuthError(
+                "Token response missing 'access_token' field"
+            )
+
+        self._access_token = token_data["access_token"]
+        expires_in = int(token_data.get("expires_in", 3600))
         self._token_expiry = time.time() + expires_in - 60  # refresh 60s early
 
     async def _ensure_token(self) -> None:
