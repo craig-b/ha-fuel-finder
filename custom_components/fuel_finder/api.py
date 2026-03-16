@@ -132,7 +132,12 @@ class FuelFinderAPI:
                 params.update(extra_params)
 
             result = await self._request(url, params)
-            data = result.get("data", [])
+
+            # API may return {"data": [...]} or a raw list
+            if isinstance(result, list):
+                data = result
+            else:
+                data = result.get("data", [])
 
             if not data:
                 break
