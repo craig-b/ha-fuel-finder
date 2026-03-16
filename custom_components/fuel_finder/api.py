@@ -80,8 +80,13 @@ class FuelFinderAPI:
         if self._access_token is None or time.time() >= self._token_expiry:
             await self.authenticate()
 
-    async def _request(self, url: str, params: dict | None = None) -> dict:
-        """Make an authenticated GET request with retry on 403."""
+    async def _request(
+        self, url: str, params: dict | None = None
+    ) -> dict | list | None:
+        """Make an authenticated GET request with retry on 403.
+
+        Returns None on 404 (used by the API to signal end-of-pagination).
+        """
         await self._ensure_token()
 
         for attempt in range(2):
@@ -89,7 +94,10 @@ class FuelFinderAPI:
                 resp = await self._session.get(
                     url,
                     params=params,
-                    headers={"Authorization": f"Bearer {self._access_token}"},
+                    headers={
+                        "Authorization": f"Bearer {self._access_token}",
+                        "Accept": "application/json",
+                    },
                 )
             except aiohttp.ClientError as err:
                 raise FuelFinderConnectionError(
@@ -98,6 +106,15 @@ class FuelFinderAPI:
 
             if resp.status == 200:
                 return await resp.json()
+
+            LOGGER.debug(
+                "Request to %s (params=%s) returned status %s",
+                url, params, resp.status,
+            )
+
+            # API returns 404 for out-of-range batch numbers (end of pagination)
+            if resp.status == 404:
+                return None
 
             if resp.status == 403 and attempt == 0:
                 LOGGER.debug("Got 403, re-authenticating")
@@ -133,7 +150,11 @@ class FuelFinderAPI:
 
             result = await self._request(url, params)
 
-            # API may return {"data": [...]} or a raw list
+            # None means 404 (end of pagination)
+            if result is None:
+                break
+
+            # API returns a raw list (batches of up to 500)
             if isinstance(result, list):
                 data = result
             else:
@@ -143,6 +164,11 @@ class FuelFinderAPI:
                 break
 
             all_data.extend(data)
+
+            # API returns up to 500 per batch; fewer means last batch
+            if len(data) < 500:
+                break
+
             batch += 1
 
         return all_data
