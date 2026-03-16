@@ -89,13 +89,22 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             query = user_input.get("search_query", "").strip().lower()
 
-            # Fetch all stations on first search
+            # Fetch all stations on first search (retry if previous attempt got none)
             if not self._all_stations:
                 try:
                     raw = await self._api.get_all_stations()
                     self._all_stations = [StationInfo.from_api(s) for s in raw]
+                    LOGGER.debug("Fetched %d stations from API", len(self._all_stations))
                 except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
                     LOGGER.exception("Failed to fetch stations")
+                    errors["base"] = "cannot_connect"
+                    return self.async_show_form(
+                        step_id="search",
+                        data_schema=self._build_search_schema(),
+                        errors=errors,
+                    )
+
+                if not self._all_stations:
                     errors["base"] = "cannot_connect"
                     return self.async_show_form(
                         step_id="search",
