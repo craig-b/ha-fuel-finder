@@ -220,7 +220,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     SelectSelectorConfig(
                         options=options,
                         multiple=True,
-                        mode=SelectSelectorMode.LIST,
+                        mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),
                 vol.Optional("search_again", default=False): bool,
