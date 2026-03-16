@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fuel Finder Credentials",
+        "description": "Enter your Fuel Finder API credentials.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret"
+        }
+      },
+      "search": {
+        "title": "Search for Stations",
+        "description": "Enter a postcode, station name, or city to search for stations.",
+        "data": {
+          "search_query": "Search"
+        }
+      },
+      "select_stations": {
+        "title": "Select Stations",
+        "description": "Select the stations you want to track.",
+        "data": {
+          "stations": "Stations",
+          "search_again": "Search for more stations"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Fuel Finder",
+        "description": "Your credentials have expired. Please enter new credentials.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret"
+        }
+      },
+      "reconfigure_search": {
+        "title": "Search for Stations",
+        "description": "Enter a postcode, station name, or city to search for stations.",
+        "data": {
+          "search_query": "Search"
+        }
+      },
+      "reconfigure_select": {
+        "title": "Select Stations",
+        "description": "Select the stations you want to track.",
+        "data": {
+          "stations": "Stations",
+          "search_again": "Search for more stations"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Fuel Finder API.",
+      "invalid_auth": "Invalid client ID or client secret.",
+      "unknown": "An unexpected error occurred.",
+      "no_stations_found": "No stations found matching your search.",
+      "no_stations_selected": "Please select at least one station."
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Reconfiguration was successful."
+    }
+  }
+}
