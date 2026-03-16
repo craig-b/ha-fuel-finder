@@ -99,6 +99,23 @@ entities:
     label_mode: state
 ```
 
+To automatically show **all** stations for a single fuel type, use the [auto-entities](https://github.com/thomasloven/lovelace-auto-entities) card (available via HACS):
+
+```yaml
+type: custom:auto-entities
+filter:
+  include:
+    - entity_id: "*_e10_price"
+      not:
+        entity_id: "*cheapest*"
+      options:
+        label_mode: state
+card:
+  type: map
+```
+
+Change `*_e10_price` to `*_b7_standard_price`, `*_e5_price`, etc. for other fuel types. The `cheapest` exclusion keeps aggregate sensors off the map.
+
 ### Cheapest fuel glance card
 
 A quick overview of the best prices across all your tracked stations:
