@@ -95,12 +95,11 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     raw = await self._api.get_all_stations()
                     self._all_stations = [StationInfo.from_api(s) for s in raw]
                 except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
+                    LOGGER.exception("Failed to fetch stations")
                     errors["base"] = "cannot_connect"
                     return self.async_show_form(
                         step_id="search",
-                        data_schema=vol.Schema(
-                            {vol.Required("search_query"): str}
-                        ),
+                        data_schema=self._build_search_schema(),
                         errors=errors,
                     )
 
@@ -121,7 +120,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="search",
-            data_schema=vol.Schema({vol.Required("search_query"): str}),
+            data_schema=self._build_search_schema(),
             errors=errors,
         )
 
@@ -161,6 +160,17 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="select_stations",
             data_schema=self._build_select_schema(),
+        )
+
+    @staticmethod
+    def _build_search_schema() -> vol.Schema:
+        """Build the schema for station search."""
+        return vol.Schema(
+            {
+                vol.Required("search_query"): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
+            }
         )
 
     def _build_select_schema(self) -> vol.Schema:
@@ -272,12 +282,11 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     raw = await self._api.get_all_stations()
                     self._all_stations = [StationInfo.from_api(s) for s in raw]
                 except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
+                    LOGGER.exception("Failed to fetch stations during reconfigure")
                     errors["base"] = "cannot_connect"
                     return self.async_show_form(
                         step_id="reconfigure_search",
-                        data_schema=vol.Schema(
-                            {vol.Required("search_query"): str}
-                        ),
+                        data_schema=self._build_search_schema(),
                         errors=errors,
                     )
 
@@ -297,7 +306,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reconfigure_search",
-            data_schema=vol.Schema({vol.Required("search_query"): str}),
+            data_schema=self._build_search_schema(),
             errors=errors,
         )
 
