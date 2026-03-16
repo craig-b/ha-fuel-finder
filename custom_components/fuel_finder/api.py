@@ -53,14 +53,14 @@ class FuelFinderAPI:
                 f"Failed to connect to token endpoint: {err}"
             ) from err
 
-        if resp.status == 403:
+        if resp.status in (400, 403):
             raise FuelFinderAuthError("Invalid client credentials")
         if resp.status == 429:
             raise FuelFinderRateLimitError("Rate limited during authentication")
-        if resp.status >= 500:
+        if resp.status in (500, 502, 503, 504):
             raise FuelFinderConnectionError(f"Server error during auth: {resp.status}")
         if resp.status != 200:
-            raise FuelFinderAuthError(f"Authentication failed with status {resp.status}")
+            raise FuelFinderConnectionError(f"Unexpected status during auth: {resp.status}")
 
         data = await resp.json()
         self._access_token = data["access_token"]
@@ -98,9 +98,11 @@ class FuelFinderAPI:
 
             if resp.status == 403:
                 raise FuelFinderAuthError("Authentication failed after retry")
+            if resp.status == 400:
+                raise FuelFinderAuthError(f"Bad request: {resp.status}")
             if resp.status == 429:
                 raise FuelFinderRateLimitError("API rate limit exceeded")
-            if resp.status >= 500:
+            if resp.status in (500, 502, 503, 504):
                 raise FuelFinderConnectionError(f"Server error: {resp.status}")
 
             raise FuelFinderConnectionError(

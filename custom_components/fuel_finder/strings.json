@@ -49,10 +49,11 @@
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the Fuel Finder API.",
-      "invalid_auth": "Invalid client ID or client secret.",
-      "unknown": "An unexpected error occurred.",
-      "no_stations_found": "No stations found matching your search.",
+      "cannot_connect": "Unable to connect to the Fuel Finder API. Please check your network connection and try again.",
+      "invalid_auth": "Invalid client ID or secret. Please verify your credentials at the Fuel Finder developer portal.",
+      "rate_limited": "Too many requests to the Fuel Finder API. Please wait a few minutes and try again.",
+      "unknown": "An unexpected error occurred. Check the Home Assistant logs for details.",
+      "no_stations_found": "No stations found matching your search. Try a different postcode, city, or station name.",
       "no_stations_selected": "Please select at least one station."
     },
     "abort": {

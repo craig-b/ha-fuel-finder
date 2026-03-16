@@ -19,8 +19,8 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from .api import FuelFinderAPI, FuelFinderAuthError, FuelFinderConnectionError
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_STATIONS, DOMAIN
+from .api import FuelFinderAPI, FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError
+from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_STATIONS, DOMAIN, LOGGER
 from .models import StationInfo
 
 
@@ -55,9 +55,12 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self._api.authenticate()
             except FuelFinderAuthError:
                 errors["base"] = "invalid_auth"
+            except FuelFinderRateLimitError:
+                errors["base"] = "rate_limited"
             except (FuelFinderConnectionError, aiohttp.ClientError, TimeoutError):
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
+                LOGGER.exception("Unexpected error during authentication")
                 errors["base"] = "unknown"
             else:
                 return await self.async_step_search()
@@ -91,7 +94,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     raw = await self._api.get_all_stations()
                     self._all_stations = [StationInfo.from_api(s) for s in raw]
-                except (FuelFinderAuthError, FuelFinderConnectionError, aiohttp.ClientError, TimeoutError):
+                except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
                     errors["base"] = "cannot_connect"
                     return self.async_show_form(
                         step_id="search",
@@ -205,9 +208,12 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                 await api.authenticate()
             except FuelFinderAuthError:
                 errors["base"] = "invalid_auth"
+            except FuelFinderRateLimitError:
+                errors["base"] = "rate_limited"
             except (FuelFinderConnectionError, aiohttp.ClientError, TimeoutError):
                 errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
+                LOGGER.exception("Unexpected error during re-authentication")
                 errors["base"] = "unknown"
             else:
                 return self.async_update_reload_and_abort(
@@ -247,7 +253,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
 
         try:
             await self._api.authenticate()
-        except (FuelFinderAuthError, FuelFinderConnectionError, aiohttp.ClientError, TimeoutError):
+        except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
             return self.async_abort(reason="cannot_connect")
 
         return await self.async_step_reconfigure_search()
@@ -265,7 +271,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                 try:
                     raw = await self._api.get_all_stations()
                     self._all_stations = [StationInfo.from_api(s) for s in raw]
-                except (FuelFinderAuthError, FuelFinderConnectionError, aiohttp.ClientError, TimeoutError):
+                except (FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError, aiohttp.ClientError, TimeoutError):
                     errors["base"] = "cannot_connect"
                     return self.async_show_form(
                         step_id="reconfigure_search",
