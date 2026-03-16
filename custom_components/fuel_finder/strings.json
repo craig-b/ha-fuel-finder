@@ -31,6 +31,13 @@
           "search_again": "Search for more stations"
         }
       },
+      "select_fuel_types": {
+        "title": "Select fuel types",
+        "description": "Choose which fuel types you want to track. Only selected types will create sensors.",
+        "data": {
+          "fuel_types": "Fuel types"
+        }
+      },
       "reauth_confirm": {
         "title": "Re-authenticate",
         "description": "Your credentials are no longer valid. Please enter new credentials.",
@@ -60,6 +67,13 @@
           "stations": "Stations",
           "search_again": "Search for more stations"
         }
+      },
+      "reconfigure_fuel_types": {
+        "title": "Select fuel types",
+        "description": "Choose which fuel types you want to track. Only selected types will create sensors.",
+        "data": {
+          "fuel_types": "Fuel types"
+        }
       }
     },
     "error": {
@@ -68,7 +82,8 @@
       "rate_limited": "Too many requests to the Fuel Finder API. Please wait a few minutes and try again.",
       "unknown": "An unexpected error occurred. Check the Home Assistant logs for details.",
       "no_stations_found": "No stations found matching your search. Try a different postcode, city, or station name.",
-      "no_stations_selected": "Please select at least one station."
+      "no_stations_selected": "Please select at least one station.",
+      "no_fuel_types_selected": "Please select at least one fuel type."
     },
     "abort": {
       "already_configured": "This account is already configured.",

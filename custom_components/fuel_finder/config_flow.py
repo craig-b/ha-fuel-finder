@@ -20,7 +20,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .api import FuelFinderAPI, FuelFinderAuthError, FuelFinderConnectionError, FuelFinderRateLimitError
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_STATIONS, DOMAIN, LOGGER
+from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_FUEL_TYPES, CONF_STATIONS, DOMAIN, FUEL_TYPES, LOGGER
 from .models import StationInfo
 
 
@@ -37,6 +37,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
         self._all_stations: list[StationInfo] = []
         self._filtered_stations: list[StationInfo] = []
         self._selected_stations: list[str] = []
+        self._selected_fuel_types: list[str] = []
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -154,6 +155,27 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "no_stations_selected"},
                 )
 
+            return await self.async_step_select_fuel_types()
+
+        return self.async_show_form(
+            step_id="select_stations",
+            data_schema=self._build_select_schema(),
+        )
+
+    async def async_step_select_fuel_types(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict:
+        """Handle the fuel type selection step."""
+        if user_input is not None:
+            self._selected_fuel_types = user_input.get("fuel_types", [])
+
+            if not self._selected_fuel_types:
+                return self.async_show_form(
+                    step_id="select_fuel_types",
+                    data_schema=self._build_fuel_type_schema(),
+                    errors={"base": "no_fuel_types_selected"},
+                )
+
             await self.async_set_unique_id(self._client_id)
             self._abort_if_unique_id_configured()
 
@@ -163,12 +185,13 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_CLIENT_ID: self._client_id,
                     CONF_CLIENT_SECRET: self._client_secret,
                     CONF_STATIONS: self._selected_stations,
+                    CONF_FUEL_TYPES: self._selected_fuel_types,
                 },
             )
 
         return self.async_show_form(
-            step_id="select_stations",
-            data_schema=self._build_select_schema(),
+            step_id="select_fuel_types",
+            data_schema=self._build_fuel_type_schema(),
         )
 
     @staticmethod
@@ -201,6 +224,30 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                 ),
                 vol.Optional("search_again", default=False): bool,
+            }
+        )
+
+    @staticmethod
+    def _build_fuel_type_schema(
+        defaults: list[str] | None = None,
+    ) -> vol.Schema:
+        """Build the schema for fuel type selection."""
+        options = [
+            SelectOptionDict(value=key, label=display)
+            for key, display in FUEL_TYPES.items()
+        ]
+        return vol.Schema(
+            {
+                vol.Required(
+                    "fuel_types",
+                    default=defaults or list(FUEL_TYPES.keys()),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=options,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
             }
         )
 
@@ -266,6 +313,7 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
         self._client_id = entry.data[CONF_CLIENT_ID]
         self._client_secret = entry.data[CONF_CLIENT_SECRET]
         self._selected_stations = list(entry.data.get(CONF_STATIONS, []))
+        self._selected_fuel_types = list(entry.data.get(CONF_FUEL_TYPES, list(FUEL_TYPES.keys())))
 
         session = async_get_clientsession(self.hass)
         self._api = FuelFinderAPI(session, self._client_id, self._client_secret)
@@ -342,12 +390,38 @@ class FuelFinderConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors={"base": "no_stations_selected"},
                 )
 
-            return self.async_update_reload_and_abort(
-                self._get_reconfigure_entry(),
-                data_updates={CONF_STATIONS: self._selected_stations},
-            )
+            return await self.async_step_reconfigure_fuel_types()
 
         return self.async_show_form(
             step_id="reconfigure_select",
             data_schema=self._build_select_schema(),
+        )
+
+    async def async_step_reconfigure_fuel_types(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict:
+        """Handle fuel type selection during reconfiguration."""
+        if user_input is not None:
+            self._selected_fuel_types = user_input.get("fuel_types", [])
+
+            if not self._selected_fuel_types:
+                return self.async_show_form(
+                    step_id="reconfigure_fuel_types",
+                    data_schema=self._build_fuel_type_schema(
+                        self._selected_fuel_types
+                    ),
+                    errors={"base": "no_fuel_types_selected"},
+                )
+
+            return self.async_update_reload_and_abort(
+                self._get_reconfigure_entry(),
+                data_updates={
+                    CONF_STATIONS: self._selected_stations,
+                    CONF_FUEL_TYPES: self._selected_fuel_types,
+                },
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure_fuel_types",
+            data_schema=self._build_fuel_type_schema(self._selected_fuel_types),
         )

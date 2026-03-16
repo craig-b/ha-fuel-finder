@@ -13,9 +13,9 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, FUEL_TYPES
+from .const import CONF_FUEL_TYPES, DOMAIN, FUEL_TYPES
 from .coordinator import FuelFinderCoordinator
-from .models import FuelFinderData
+from .models import FuelFinderData, StationInfo
 
 
 def _build_fuel_descriptions() -> dict[str, SensorEntityDescription]:
@@ -42,18 +42,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up Fuel Finder sensors."""
     coordinator: FuelFinderCoordinator = hass.data[DOMAIN][entry.entry_id]
+    selected_fuel_types = set(
+        entry.data.get(CONF_FUEL_TYPES, list(FUEL_TYPES.keys()))
+    )
     entities: list[SensorEntity] = []
 
     # Per-station price sensors
     for node_id, station in coordinator.data.stations.items():
         for fuel_type in station.fuel_types:
-            if fuel_type in FUEL_DESCRIPTIONS:
+            if fuel_type in FUEL_DESCRIPTIONS and fuel_type in selected_fuel_types:
                 entities.append(
                     FuelPriceSensor(
                         coordinator,
                         node_id,
-                        station.trading_name,
-                        station.brand_name,
+                        station,
                         FUEL_DESCRIPTIONS[fuel_type],
                     )
                 )
@@ -62,7 +64,7 @@ async def async_setup_entry(
     fuel_types_with_coverage: set[str] = set()
     for station in coordinator.data.stations.values():
         for ft in station.fuel_types:
-            if ft in FUEL_TYPES:
+            if ft in FUEL_TYPES and ft in selected_fuel_types:
                 fuel_types_with_coverage.add(ft)
 
     for fuel_type in fuel_types_with_coverage:
@@ -82,8 +84,7 @@ class FuelPriceSensor(CoordinatorEntity[FuelFinderCoordinator], SensorEntity):
         self,
         coordinator: FuelFinderCoordinator,
         node_id: str,
-        trading_name: str,
-        brand_name: str,
+        station: StationInfo,
         description: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
@@ -91,12 +92,18 @@ class FuelPriceSensor(CoordinatorEntity[FuelFinderCoordinator], SensorEntity):
         self.entity_description = description
         self._node_id = node_id
         self._attr_unique_id = f"{node_id}_{description.key}"
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, node_id)},
-            name=trading_name,
-            manufacturer=brand_name,
+            name=station.trading_name,
+            manufacturer=station.brand_name,
             model="Petrol Station",
         )
+        loc = station.location
+        if loc.latitude and loc.longitude:
+            device_info["configuration_url"] = (
+                f"https://www.google.com/maps/?q={loc.latitude},{loc.longitude}"
+            )
+        self._attr_device_info = device_info
 
     @property
     def native_value(self) -> float | None:
@@ -108,15 +115,20 @@ class FuelPriceSensor(CoordinatorEntity[FuelFinderCoordinator], SensorEntity):
         return None
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | None] | None:
+    def extra_state_attributes(self) -> dict[str, str | float | None] | None:
         """Return extra state attributes."""
+        station = self.coordinator.data.stations.get(self._node_id)
         prices = self.coordinator.data.prices.get(self._node_id, [])
         for price in prices:
             if price.fuel_type == self.entity_description.key:
-                return {
+                attrs: dict[str, str | float | None] = {
                     "price_last_updated": price.price_last_updated,
                     "price_change_effective_timestamp": price.price_change_effective_timestamp,
                 }
+                if station and station.location.latitude and station.location.longitude:
+                    attrs["latitude"] = station.location.latitude
+                    attrs["longitude"] = station.location.longitude
+                return attrs
         return None
 
 

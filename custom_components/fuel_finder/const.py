@@ -25,3 +25,4 @@ FUEL_TYPES: dict[str, str] = {
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
 CONF_STATIONS = "stations"
+CONF_FUEL_TYPES = "fuel_types"
